@@ -1,28 +1,24 @@
 import json
-import psycopg2
+import sqlite3  # Cambiado psycopg2 por la librería nativa sqlite3
 
-def guardar_en_postgres(resource_name, port_number, status):
-    """Guarda automáticamente el hallazgo crítico en la base de datos PostgreSQL local."""
+def guardar_en_sqlite(resource_name, port_number, status):
+    """Guarda automáticamente el hallazgo crítico en la base de datos SQLite local."""
     try:
-        conexion = psycopg2.connect(
-            dbname="cloud_security",
-            user="gilbertocelis",
-            host="localhost",
-            port="5432"
-        )
+        # Nos conectamos directamente al archivo físico que subiste a tu repositorio
+        conexion = sqlite3.connect("servidor_seguridad.db")
         cursor = conexion.cursor()
         
-        # Insertamos el hallazgo utilizando parámetros seguros (%s) para evitar SQL Injection
+        # Insertamos el hallazgo utilizando parámetros seguros (?) para evitar SQL Injection
         query = """INSERT INTO security_groups (resource_name, port_number, status) 
-                   VALUES (%s, %s, %s);"""
+                   VALUES (?, ?, ?);"""
         cursor.execute(query, (resource_name, port_number, status))
         
         conexion.commit()
         cursor.close()
         conexion.close()
-        print(f"💾 [DB] Hallazgo [{resource_name}] registrado en PostgreSQL.")
+        print(f"💾 [DB] Hallazgo [{resource_name}] registrado en SQLite.")
     except Exception as e:
-        print(f"❌ [DB] Error al conectar o guardar en PostgreSQL: {e}")
+        print(f"❌ [DB] Error al conectar o guardar en SQLite: {e}")
 
 def auditar_entorno_cloud():
     print("[+] Iniciando auditoría de postura de seguridad en la nube (CSPM)...")
@@ -50,8 +46,8 @@ def auditar_entorno_cloud():
                 "severity": "CRITICAL",
                 "finding": "Bucket público expone posibles credenciales de acceso."
             })
-            # ENLACE DB: Los buckets no tienen puerto fijo, simulamos puerto 443 (HTTPS)
-            guardar_en_postgres(bucket["name"], 443, "VULNERABLE")
+            # ENLACE DB: Cambiado para usar la función adaptada a SQLite
+            guardar_en_sqlite(bucket["name"], 443, "VULNERABLE")
             
     # 2. Auditar puertos de administración expuestos
     for sg in infraestructura_simulada["security_groups"]:
@@ -62,8 +58,8 @@ def auditar_entorno_cloud():
                 "severity": "HIGH",
                 "finding": "Puerto de administración SSH (22) abierto globalmente a Internet."
             })
-            # ENLACE DB: Guardamos el grupo de seguridad con su puerto real 22
-            guardar_en_postgres(sg["id"], sg["port"], "VULNERABLE")
+            # ENLACE DB: Cambiado para usar la función adaptada a SQLite
+            guardar_en_sqlite(sg["id"], sg["port"], "VULNERABLE")
             
     generar_reporte(reporte_hallazgos)
 
@@ -80,4 +76,5 @@ def generar_reporte(hallazgos):
 
 if __name__ == "__main__":
     auditar_entorno_cloud()
+
             
