@@ -1,0 +1,25 @@
+name: Cloud Security Audit CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  audit-infrastructure:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository code
+      uses: actions/checkout@v4
+
+    - name: Set up Python 3.x
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+
+    - name: Run Cloud Security Auditor
+      run: |
+        python3 cloud_auditor.py
+
